@@ -14,7 +14,7 @@ import java.util.Enumeration;
 /**
  * Create class DBDemo
  *
- * @author Sirin
+ * @author Rachoti
  *
  */
 public class DBDemo {
@@ -43,7 +43,6 @@ public class DBDemo {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     /**
