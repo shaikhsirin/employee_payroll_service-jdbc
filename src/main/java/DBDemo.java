@@ -1,11 +1,3 @@
-/**
- * UC1 :- Ability to create a payroll service database and have java program connect to database.
- *
- */
-
-/**
- * import all sql packages.
- */
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -14,7 +6,7 @@ import java.util.Enumeration;
 /**
  * Create class DBDemo
  *
- * @author Rachoti
+ * @author Sirin
  *
  */
 public class DBDemo {
