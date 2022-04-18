@@ -1,8 +1,9 @@
-import static java.util.Arrays.asList;
-
-import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static java.util.Arrays.asList;
 
 /**
  * Create class EmployeePayrollServiceTest Added Salary is Updated Database
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 public class EmployeePayrollServiceTest {
     private static final EmployeePayrollService.IOService DB_IO = null;
+
     @Test
     public void given3EmployeeWhenWrittenToFileShouldMatchEmployeeEntries() {
         EmployeePayrollData[] arrayOfEmps = { new EmployeePayrollData(1, "Jeff Bezos", 100000.0),
@@ -18,11 +20,10 @@ public class EmployeePayrollServiceTest {
         EmployeePayrollService employeePayrollService;
         employeePayrollService = new EmployeePayrollService(asList(arrayOfEmps));
         employeePayrollService.printEmployeePayrollData(EmployeePayrollService.IOService.FILE_IO);
-        EmployeePayrollService.IOService.printData();
+        employeePayrollService.printEmployeePayrollData(EmployeePayrollService.IOService.FILE_IO);
         long entries = employeePayrollService.countEnteries(EmployeePayrollService.IOService.FILE_IO);
         Assertions.assertEquals(3, entries);
     }
-
 
     /**
      * Create method givenFileOnReadingFromFileShouldMatchEmployeeCount create

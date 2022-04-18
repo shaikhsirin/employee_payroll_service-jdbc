@@ -6,13 +6,13 @@ import java.util.List;
 
 /**
  *
- * @author Rachoti Create class FileIOService
+ * @author Sirin Create class FileIOService
  */
 public class FileIOService {
     public static final String PAYROLL_FILE_NAME = "employee-payroll-file.txt";
 
     /**
-     * Create Arrylist
+     * Create Arrylist EmployeePayrollData
      *
      * @param employeeList
      */
@@ -31,6 +31,11 @@ public class FileIOService {
         }
     }
 
+    /**
+     * Create method countEntries
+     *
+     * @return
+     */
     public long countEntries() {
         long countOfEntries = 0;
         try {
@@ -50,6 +55,11 @@ public class FileIOService {
         }
     }
 
+    /**
+     * Create array list for EmployeePayrollData
+     *
+     * @return
+     */
     public List<EmployeePayrollData> readData() {
         List<EmployeePayrollData> employeeReadList = new ArrayList<EmployeePayrollData>();
         try {
