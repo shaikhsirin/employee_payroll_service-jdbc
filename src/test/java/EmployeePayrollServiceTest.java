@@ -1,46 +1,87 @@
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
-import static java.util.Arrays.asList;
-
-/**
- * Create class EmployeePayrollServiceTest Added Salary is Updated Database
- */
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class EmployeePayrollServiceTest {
-    private static final EmployeePayrollService.IOService DB_IO = null;
-
     @Test
-    public void given3EmployeeWhenWrittenToFileShouldMatchEmployeeEntries() {
-        EmployeePayrollData[] arrayOfEmps = { new EmployeePayrollData(1, "Jeff Bezos", 100000.0),
-                new EmployeePayrollData(2, "Bill Gates", 200000.0),
-                new EmployeePayrollData(3, "Mark Zuckerberg", 300000.0) };
+    public void given3Employees_WhenWrittenToFile_ShouldMatchEmployeeEntries() {
+        EmployeePayrollData[] arrayOfEmp = {new EmployeePayrollData(1, "BILL", 100000.0),
+                new EmployeePayrollData(2, "Terisa", 200000.0),
+                new EmployeePayrollData(3, "Charlie", 300000.0)};
         EmployeePayrollService employeePayrollService;
-        employeePayrollService = new EmployeePayrollService(asList(arrayOfEmps));
-        employeePayrollService.printEmployeePayrollData(EmployeePayrollService.IOService.FILE_IO);
-        employeePayrollService.printEmployeePayrollData(EmployeePayrollService.IOService.FILE_IO);
-        long entries = employeePayrollService.countEnteries(EmployeePayrollService.IOService.FILE_IO);
-        Assertions.assertEquals(3, entries);
+        employeePayrollService = new EmployeePayrollService(Arrays.asList(arrayOfEmp));
+        employeePayrollService.writeEmployeeData(EmployeePayrollService.IOService.FILE_IO);
+        long entries = employeePayrollService.countEntries(EmployeePayrollService.IOService.FILE_IO);
+        employeePayrollService.printData(EmployeePayrollService.IOService.FILE_IO);
+        List<EmployeePayrollData> employeeList = employeePayrollService.readData(EmployeePayrollService.IOService.FILE_IO);
+        System.out.println(employeeList);
+        assertEquals(3, entries);
     }
 
+    @Test
+    public void givenEmployeePayrollInDB_WhenRetrieved_ShouldMatchEmployeeCount() {
+        EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+        List<EmployeePayrollData> employeePayrollData = employeePayrollService.readData(EmployeePayrollService.IOService.DB_IO);
+        assertEquals(3, employeePayrollData.size());
+    }
+    @Test
+    public void givenNewSalaryForEmployee_WhenUpdated_ShouldSyncWithDatabase() throws EmployeePayrollException {
+        EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+        List<EmployeePayrollData> employeePayrollData = employeePayrollService.readData(EmployeePayrollService.IOService.DB_IO);
+        employeePayrollService.updateEmployeeSalary("Terisa", 3000000.00, EmployeePayrollDBService.StatementType.STATEMENT);
+        boolean result = employeePayrollService.checkEmployeePayrollInSyncWithDB("Terisa");
+        assert(result);
+        System.out.println(employeePayrollData);
+    }
+
+    @Test
     /**
-     * Create method givenFileOnReadingFromFileShouldMatchEmployeeCount create
-     * object of EmployeePayrollService Create Array List of EmployeePayrollData
+     * To test whether the salary is updated in the database and is synced with the
+     * DB using JDBC PreparedStatement
+     *
+     * @throws EmployeePayrollException
      */
-    @Test
-    public void givenFileOnReadingFromFileShouldMatchEmployeeCount() {
+    public void givenNewSalaryForEmployee_WhenUpdatedUsingPreparedStatement_ShouldSyncWithDatabase()
+            throws EmployeePayrollException {
         EmployeePayrollService employeePayrollService = new EmployeePayrollService();
-        List<EmployeePayrollData> entries = employeePayrollService
-                .printEmployeePayrollData(EmployeePayrollService.IOService.FILE_IO);
-        Assertions.assertEquals(3, entries);
+        List<EmployeePayrollData> employeePayrollData = employeePayrollService.readData(EmployeePayrollService.IOService.DB_IO);
+        employeePayrollService.updateEmployeeSalary("Terisa", 3000000.00, EmployeePayrollDBService.StatementType.PREPARED_STATEMENT);
+        boolean result = employeePayrollService.checkEmployeePayrollInSyncWithDB("Terisa");
+        assert(result);
+        System.out.println(employeePayrollData);
+    }
+    @Test
+    /**
+     * To test whether the count of the retrieved data who have joined in a
+     * particular data range matches with the expected value
+     *
+     * @throws EmployeePayrollException
+     */
+    public void givenDateRangeForEmployee_WhenRetrievedUsingStatement_ShouldReturnProperData()
+            throws EmployeePayrollException {
+        EmployeePayrollService employeePayrollService = new EmployeePayrollService();
+        List<EmployeePayrollData> employeePayrollData = employeePayrollService.readData(EmployeePayrollService.IOService.DB_IO);
+        List<EmployeePayrollData> employeeDataInGivenDateRange = employeePayrollService
+                .getEmployeesInDateRange("2019-01-14", "2020-05-05");
+        assertEquals(2, employeeDataInGivenDateRange.size());
+        System.out.println(employeePayrollData);
     }
 
+    // UC6
     @Test
-    public void givenEmployeePayrollInDB_WhenRetrived_ShouldMathchEmployeeCount() {
+    /**
+     * to test When Average Salary Retrieved By Gender Should Return Proper Value
+     */
+    public void givenPayrollData_WhenAverageSalaryRetrievedByGender_ShouldReturnProperValue() {
         EmployeePayrollService employeePayrollService = new EmployeePayrollService();
-        List<EmployeePayrollData> employeePayrollData = employeePayrollService.printEmployeePayrollData(DB_IO);
-        Assertions.assertEquals(3, employeePayrollData.size());
+        employeePayrollService.readData(EmployeePayrollService.IOService.DB_IO);
+        Map<String, Double> averageSalaryByGender = employeePayrollService.readAverageSalaryByGender(EmployeePayrollService.IOService.DB_IO);
+        System.out.println(averageSalaryByGender);
+        assert(
+                averageSalaryByGender.get("M").equals(200000.0) && averageSalaryByGender.get("F").equals(3000000.0));
     }
 }

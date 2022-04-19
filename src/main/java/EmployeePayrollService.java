@@ -1,103 +1,155 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
-/**
- * Create class EmployeePayrollService
- *
- * @author Sirin
- *
- */
 public class EmployeePayrollService {
     public enum IOService {
         CONSOLE_IO, FILE_IO, DB_IO, REST_IO
     }
 
     /**
-     * Create a ArryList EmployeePayrollData create Scanner object
+     * To get the list of employee payroll from the database
      */
-    public static final Scanner SC = new Scanner(System.in);
-    private List<EmployeePayrollData> employeePayrollList;
+    public List<EmployeePayrollData> employeePayrollList;
+    private EmployeePayrollDBService employeePayrollDBService;
 
     public EmployeePayrollService() {
-        this.employeePayrollList = new ArrayList<EmployeePayrollData>();
+        employeePayrollDBService = EmployeePayrollDBService.getInstance();
     }
 
-    public EmployeePayrollService(List<EmployeePayrollData> employeeList) {
-        this.employeePayrollList = employeeList;
+    public EmployeePayrollService(List<EmployeePayrollData> employeePayrollList) {
+        this();
+        this.employeePayrollList = employeePayrollList;
     }
 
-    public int sizeOfEmployeeList() {
-        return this.employeePayrollList.size();
+    public static void main(String[] args) {
+        List<EmployeePayrollData> employeePayrollList = new ArrayList<EmployeePayrollData>();
+        EmployeePayrollService employeePayrollService = new EmployeePayrollService(employeePayrollList);
+        Scanner consoleInputReader = new Scanner(System.in);
+        employeePayrollService.readEmployeeData(consoleInputReader);
+        employeePayrollService.writeEmployeeData(IOService.CONSOLE_IO);
     }
 
     /**
-     *
-     * Create method readEmployeeData and passing parameter
-     *
-     * @param ioType
+     * @param consoleInputReader Read employee data
      */
-
-    public void readEmployeeData(IOService ioType) {
-        if (ioType.equals(IOService.CONSOLE_IO)) {
-            System.out.println("Enter employee id:");
-            int employeeId = SC.nextInt();
-            System.out.println("Enter employee name:");
-            SC.nextLine();
-            String employeeName = SC.nextLine();
-            System.out.println("Enter employee salary:");
-            double employeeSalary = SC.nextDouble();
-            EmployeePayrollData newEmployee = new EmployeePayrollData(employeeId, employeeName, employeeSalary);
-            employeePayrollList.add(newEmployee);
-        } else if (ioType.equals(IOService.FILE_IO))
-            this.employeePayrollList = new FileIOService().readData();
-        else if (ioType.equals(IOService.DB_IO)) {
-            try {
-                this.employeePayrollList = new DatabaselIOService().readData();
-            } catch (DBException e) {
-                e.printStackTrace();
-            }
-        }
+    public void readEmployeeData(Scanner consoleInputReader) {
+        System.out.println("Enter employee ID : ");
+        int id = Integer.parseInt(consoleInputReader.nextLine());
+        System.out.println("Enter employee name : ");
+        String name = consoleInputReader.nextLine();
+        System.out.println("Enter employee salary : ");
+        double salary = Double.parseDouble(consoleInputReader.nextLine());
+        employeePayrollList.add(new EmployeePayrollData(id, name, salary));
     }
 
-    public void writeEmployeeData(IOService ioType) {
-        if (ioType.equals(IOService.CONSOLE_IO)) {
-            for (EmployeePayrollData o : employeePayrollList)
-                System.out.println(o.toString());
-        } else if (ioType.equals(IOService.FILE_IO)) {
-            new FileIOService().writeData(employeePayrollList);
-        }
+    /**
+     * Write payroll data to console
+     */
+    public void writeEmployeeData(IOService ioService) {
+        if (ioService.equals(IOService.CONSOLE_IO))
+            System.out.println("Writing Employee Payroll Data to Console\n" + employeePayrollList);
+        else if (ioService.equals(IOService.FILE_IO))
+            new EmployeePayrollFileIOService().writeData(employeePayrollList);
     }
 
-    public long countEnteries(IOService ioType) {
-        if (ioType.equals(IOService.FILE_IO))
-            return new FileIOService().countEntries();
+    /**
+     * @param ioService Print Data
+     */
+    public void printData(IOService ioService) {
+        new EmployeePayrollFileIOService().printData();
+    }
+
+    /**
+     * @param ioService
+     * @return number of entries
+     */
+    public long countEntries(IOService ioService) {
+        if (ioService.equals(IOService.FILE_IO))
+            return new EmployeePayrollFileIOService().countEntries();
         return 0;
     }
 
-    public List<EmployeePayrollData> printEmployeePayrollData(IOService ioType) {
-        if (ioType.equals(IOService.FILE_IO))
-            new FileIOService().printEmployeePayrolls();
+    /**
+     * @param ioService
+     * @return Employee Payroll Data List
+     */
+    public List<EmployeePayrollData> readData(IOService ioService) {
+        if (ioService.equals(IOService.FILE_IO))
+            return new EmployeePayrollFileIOService().readData();
+        else if (ioService.equals(IOService.DB_IO)) {
+            employeePayrollList = employeePayrollDBService.readData();
+            return employeePayrollList;
+        } else
+            return null;
+    }
+
+    /**
+     * updating EmployeeSalary from the database
+     *
+     * @param name
+     * @param salary
+     * @throwsEmployeePayrollException
+     */
+    public void updateEmployeeSalary(String name, double salary, EmployeePayrollDBService.StatementType type) throws EmployeePayrollException {
+        int result = employeePayrollDBService.updateEmployeeData(name, salary, type);
+        EmployeePayrollData employeePayrollData = null;
+        if (result == 0)
+            throw new EmployeePayrollException(EmployeePayrollException.ExceptionType.UPDATE_FAIL, "Update Failed");
         else
-            this.employeePayrollList.stream().forEach(employeeData -> System.out.println(employeeData.toString()));
-        return employeePayrollList;
+            employeePayrollData = this.getEmployeePayrollData(name);
+        if (employeePayrollData != null) {
+            employeePayrollData.salary = salary;
+        }
     }
 
-    public void printData(IOService fileIo) {
+    /**
+     * getting the employeepayroll data
+     *
+     * @param name
+     * @return Employee corresponding to name
+     */
+    private EmployeePayrollData getEmployeePayrollData(String name) {
+        EmployeePayrollData employeePayrollData = this.employeePayrollList.stream()
+                .filter(employee -> employee.name.equals(name)).findFirst().orElse(null);
+        return employeePayrollData;
+    }
+
+    /**
+     * method to check payroll is synced with databse
+     *
+     * @param name
+     * @return true if data is in sync
+     */
+    public boolean checkEmployeePayrollInSyncWithDB(String name) {
+        List<EmployeePayrollData> checkList = employeePayrollDBService.getEmployeePayrollData(name);
+        return checkList.get(0).equals(getEmployeePayrollData(name));
 
     }
 
-    public long countEnteries1(IOService ioType) {
-        if (ioType.equals(IOService.FILE_IO))
-            return new FileIOService().countEntries();
-        return 0;
+    /**
+     * Retrieve the data for a particular date range
+     *
+     * @param date1
+     * @param date2
+     * @return
+     */
+    public List<EmployeePayrollData> getEmployeesInDateRange(String date1, String date2) {
+        List<EmployeePayrollData> employeesInGivenDateRangeList = employeePayrollDBService
+                .getEmployeesInGivenDateRangeDB(date1, date2);
+        return employeesInGivenDateRangeList;
     }
 
-    public void printEmployeePayrollData1(IOService ioType) {
-        if (ioType.equals(IOService.FILE_IO))
-            new FileIOService().printEmployeePayrolls();
-        else
-            this.employeePayrollList.stream().forEach(employeeData -> System.out.println(employeeData.toString()));
+    /**
+     * read the Average Salary group ByGender using Hashmap
+     *
+     * @param ioService
+     * @return
+     */
+    public Map<String, Double> readAverageSalaryByGender(IOService ioService) {
+        if (ioService.equals(IOService.DB_IO))
+            return employeePayrollDBService.getAverageSalaryByGender();
+        return null;
     }
 }
-
